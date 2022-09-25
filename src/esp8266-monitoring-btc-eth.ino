@@ -15,6 +15,7 @@
  License along with this library; if not, write to the Free Software
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+
 #include <ArduinoJson.h>
 #include <LiquidCrystal_I2C.h> 
 #include <Wire.h>  
@@ -26,84 +27,23 @@
 #include <UniversalTelegramBot.h>
 #include "credentials.h"
 
-ESP8266WiFiMulti WiFiMulti;
-
-//SHA1 fingerprint of the certificate. 
-const char fingerprint[] = SHA1_CERTIFICATE;
-
+//SHA1 fingerprint of the certificate.
+const char fingerprint[] = SHA1_CERTIFICATE; 
 double btc_price; 
 double eth_price;
 double btc_price_last; 
 double eth_price_last;
+
 LiquidCrystal_I2C lcd(0x27, 16, 2);
+ESP8266WiFiMulti WiFiMulti;
 
-byte zero[] = {
-  B00000,
-  B00000,
-  B00000,
-  B00000,
-  B00000,
-  B00000,
-  B00000,
-  B00000
-};
-byte one[] = {
-  B10000,
-  B10000,
-  B10000,
-  B10000,
-  B10000,
-  B10000,
-  B10000,
-  B10000
-};
+byte zero[] = {  B00000,  B00000,  B00000,  B00000,  B00000,  B00000,  B00000,  B00000};
+byte one[]  = {  B10000,  B10000,  B10000,  B10000,  B10000,  B10000,  B10000,  B10000};
+byte two[] = {  B11000,  B11000,  B11000,  B11000,  B11000,  B11000,  B11000,  B11000};
+byte three[] = {  B11100,  B11100,  B11100,  B11100,  B11100,  B11100,  B11100,  B11100};
+byte four[] = {  B11110,  B11110,  B11110,  B11110,  B11110,  B11110,  B11110,  B11110};
+byte five[] = {  B11111,  B11111,  B11111,  B11111,  B11111,  B11111,  B11111,  B11111};
 
-byte two[] = {
-  B11000,
-  B11000,
-  B11000,
-  B11000,
-  B11000,
-  B11000,
-  B11000,
-  B11000
-};
-
-byte three[] = {
-  B11100,
-  B11100,
-  B11100,
-  B11100,
-  B11100,
-  B11100,
-  B11100,
-  B11100
-};
-
-byte four[] = {
-  B11110,
-  B11110,
-  B11110,
-  B11110,
-  B11110,
-  B11110,
-  B11110,
-  B11110
-};
-
-byte five[] = {
-  B11111,
-  B11111,
-  B11111,
-  B11111,
-  B11111,
-  B11111,
-  B11111,
-  B11111
-};
-
-
-     
 void setup() {
   
   Serial.begin(115200);
@@ -116,6 +56,8 @@ void setup() {
   lcd.createChar(3, three);
   lcd.createChar(4, four);
   lcd.createChar(5, five);
+  //This line calls the displays the progress bar.
+  updateProgressBarLoop();   
   lcd.setCursor(5, 0);
   lcd.print("HELLO");
   delay(300);
@@ -127,7 +69,8 @@ void setup() {
   WiFiMulti.addAP(WIFI_SSID,WIFI_PASSWD); 
   lcd.clear(); 
   lcd.setCursor(0, 0);      
-  connectionWifi(); //Check connection WiFi
+  //Check connection WiFi
+  connectionWifi(); 
   delay(3000);
   lcd.clear(); 
       
@@ -135,7 +78,8 @@ void setup() {
 
 void loop() {
  
-  getData(); //Get api data
+  //Get api data
+  getData(); 
   lcd.setCursor(0, 0);
   lcd.print("BTC: ");
   lcd.setCursor(5, 0);
@@ -229,20 +173,10 @@ void updateProgressBarLoop() {
     lcd.print(i);
     lcd.print("   ");
     updateProgressBar(i, 100, 1); //This line calls the subroutine that displays the progress bar.  
-    delay(200);
-  }
-
-  delay(1000);
-
-  for(int i=100; i >= 0; i--) {
-    
-    lcd.setCursor(0,0);
-    lcd.print(i);
-    lcd.print("   ");
-    updateProgressBar(i, 100, 1);   
     delay(50);
-  }  
+  }
   delay(1000);
+  lcd.clear();
   
 }
 

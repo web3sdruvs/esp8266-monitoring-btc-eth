@@ -23,7 +23,7 @@
 #include <ESP8266HTTPClient.h>
 #include <ESP8266WiFiMulti.h>
 #include <WiFiClientSecureBearSSL.h>
-#include <UniversalTelegramBot.h> 
+#include <UniversalTelegramBot.h>
 #include "credentials.h"
 
 ESP8266WiFiMulti WiFiMulti;
@@ -33,6 +33,8 @@ const char fingerprint[] = SHA1_CERTIFICATE;
 
 double btc_price; 
 double eth_price;
+double btc_price_last; 
+double eth_price_last;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 byte zero[] = {
@@ -171,48 +173,58 @@ void getData() {
 
   if ((WiFi.status() == WL_CONNECTED)) { 
 
-      HTTPClient https;
-      StaticJsonDocument<200> doc;
-      int httpCode;
+    HTTPClient https;
+    StaticJsonDocument<200> doc;
+    int httpCode;
 
-      //Bitcoin
-      https.begin(*client, "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT");
-      httpCode = https.GET();   
+    //Bitcoin
+    https.begin(*client, "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT");
+    httpCode = https.GET();   
 
-      //Check the status of the api, if it is activated, the json get is done
-      if (httpCode > 199 && httpCode < 300) {//Check if API is enabled
-          DynamicJsonDocument doc(1024);
-          deserializeJson(doc, https.getString());
-          JsonObject object = doc.as<JsonObject>();
-          btc_price = object["price"]; //Get the value that is in json
-      }
-      else {
-        btc_price = 0.00; 
-      }
-
-      //Ethereum
-      https.begin(*client, "https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT");
-      httpCode = https.GET();   
-
-      //Check the status of the api, if it is activated, the json get is done
-      if (httpCode > 199 && httpCode < 300) {//Check if API is enabled
-          DynamicJsonDocument doc(1024);
-          deserializeJson(doc, https.getString());
-          JsonObject object = doc.as<JsonObject>();
-          eth_price = object["price"]; //Get the value that is in json
-      }
-      else {
-        eth_price = 0.00; 
-      }
-
-      https.end(); 
-      
+    //Check the status of the api, if it is activated, the json get is done
+    if (httpCode > 199 && httpCode < 300) {//Check if API is enabled
+        DynamicJsonDocument doc(1024);
+        deserializeJson(doc, https.getString());
+        JsonObject object = doc.as<JsonObject>();
+        btc_price = object["price"]; //Get the value that is in json
     }
+    else {
+      btc_price = 0.00; 
+    }
+
+    //Ethereum
+    https.begin(*client, "https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT");
+    httpCode = https.GET();   
+
+    //Check the status of the api, if it is activated, the json get is done
+    if (httpCode > 199 && httpCode < 300) {//Check if API is enabled
+        DynamicJsonDocument doc(1024);
+        deserializeJson(doc, https.getString());
+        JsonObject object = doc.as<JsonObject>();
+        eth_price = object["price"]; //Get the value that is in json
+    }
+    else {
+      eth_price = 0.00; 
+    }
+
+    https.end(); 
+
+    //Fixed a small bug in the API that happens for a few seconds
+    if (btc_price < 10) {
+      btc_price = btc_price_last;
+    } else if (eth_price < 10) {
+      eth_price = eth_price_last;
+    }
+
+    btc_price_last = btc_price;    
+    eth_price_last = eth_price;
+
+  }
 }
 
 void updateProgressBarLoop() {
   
-  for(int i=0; i <= 100; i++){
+  for(int i=0; i <= 100; i++) {
     lcd.setCursor(0,0);
     lcd.print(i);
     lcd.print("   ");
@@ -222,13 +234,14 @@ void updateProgressBarLoop() {
 
   delay(1000);
 
-  for(int i=100; i >= 0; i--){
+  for(int i=100; i >= 0; i--) {
+    
     lcd.setCursor(0,0);
     lcd.print(i);
     lcd.print("   ");
     updateProgressBar(i, 100, 1);   
     delay(50);
-  }
+  }  
   delay(1000);
   
 }
@@ -240,11 +253,10 @@ void updateProgressBar(unsigned long count, unsigned long totalCount, int lineTo
   int number = percent/5;
   int remainder = percent%5;
 
-  if(number > 0){
+  if(number > 0) {
      lcd.setCursor(number-1,lineToPrintOn);
      lcd.write(5);
   }
- 
      lcd.setCursor(number,lineToPrintOn);
      lcd.write(remainder); 
        

@@ -55,9 +55,7 @@ void setup() {
   lcd.createChar(2, two);
   lcd.createChar(3, three);
   lcd.createChar(4, four);
-  lcd.createChar(5, five);
-  //This line calls the displays the progress bar.
-  updateProgressBarLoop();   
+  lcd.createChar(5, five);  
   lcd.setCursor(5, 0);
   lcd.print("HELLO");
   delay(300);
@@ -68,6 +66,8 @@ void setup() {
   WiFi.mode(WIFI_STA);
   WiFiMulti.addAP(WIFI_SSID,WIFI_PASSWD); 
   lcd.clear(); 
+  //This line calls the displays the progress bar.
+  updateProgressBarLoop(); 
   lcd.setCursor(0, 0);      
   //Check connection WiFi
   connectionWifi(); 

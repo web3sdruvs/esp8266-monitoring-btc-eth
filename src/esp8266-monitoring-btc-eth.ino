@@ -27,6 +27,13 @@
 #include <UniversalTelegramBot.h>
 #include "credentials.h"
 
+#ifdef ESP8266
+  X509List cert(TELEGRAM_CERTIFICATE_ROOT);
+#endif
+
+WiFiClientSecure client_bot;
+UniversalTelegramBot bot(BOT_TOKEN, client_bot);
+
 //SHA1 fingerprint of the certificate.
 const char fingerprint[] = SHA1_CERTIFICATE; 
 double btc_price; 
@@ -37,16 +44,25 @@ double eth_price_last;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 ESP8266WiFiMulti WiFiMulti;
 
-byte zero[] = {  B00000,  B00000,  B00000,  B00000,  B00000,  B00000,  B00000,  B00000};
-byte one[]  = {  B10000,  B10000,  B10000,  B10000,  B10000,  B10000,  B10000,  B10000};
-byte two[] = {  B11000,  B11000,  B11000,  B11000,  B11000,  B11000,  B11000,  B11000};
-byte three[] = {  B11100,  B11100,  B11100,  B11100,  B11100,  B11100,  B11100,  B11100};
-byte four[] = {  B11110,  B11110,  B11110,  B11110,  B11110,  B11110,  B11110,  B11110};
-byte five[] = {  B11111,  B11111,  B11111,  B11111,  B11111,  B11111,  B11111,  B11111};
+byte zero[]  = {B00000,B00000,B00000,B00000,B00000,B00000,B00000,B00000};
+byte one[]   = {B10000,B10000,B10000,B10000,B10000,B10000,B10000,B10000};
+byte two[]   = {B11000,B11000,B11000,B11000,B11000,B11000,B11000,B11000};
+byte three[] = {B11100,B11100,B11100,B11100,B11100,B11100,B11100,B11100};
+byte four[]  = {B11110,B11110,B11110,B11110,B11110,B11110,B11110,B11110};
+byte five[]  = {B11111,B11111,B11111,B11111,B11111,B11111,B11111,B11111};
 
 void setup() {
   
   Serial.begin(115200);
+  //Add certificate
+  //get UTC time
+  #ifdef ESP8266
+    configTime(0, 0, "pool.ntp.org");      
+    client_bot.setTrustAnchors(&cert); 
+  #endif
+  #ifdef ESP32
+    client_bot.setCACert(TELEGRAM_CERTIFICATE_ROOT); 
+  #endif
   lcd.begin();
   lcd.backlight();
   lcd.clear(); 
@@ -73,6 +89,7 @@ void setup() {
   connectionWifi(); 
   delay(3000);
   lcd.clear(); 
+  bot.sendMessage(CHAT_ID, "Bot On\n\nHello Friend!", "");
       
 }
 

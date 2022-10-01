@@ -87,16 +87,16 @@ void setup() {
   lcd.setCursor(0, 0);      
   //Check connection WiFi
   connectionWifi(); 
-  delay(3000);
-  lcd.clear(); 
-  bot.sendMessage(CHAT_ID, "Bot On\n\nHello Friend!", "");
+  delay(500);
+  lcd.clear();
+  //Get api data and send menssage in Telegram 
+  getData(); 
+  bot.sendMessage(CHAT_ID, "Bot Online\n\nHello Friend!\n\nPrices\nBitcoin: $"+String(btc_price)+"\nEthereum: $"+String(eth_price), "");
       
 }
 
 void loop() {
  
-  //Get api data
-  getData(); 
   lcd.setCursor(0, 0);
   lcd.print("BTC: ");
   lcd.setCursor(5, 0);
@@ -106,6 +106,8 @@ void loop() {
   lcd.setCursor(5, 1);
   lcd.print("$"+String(eth_price));
   delay(15000);
+  //Get api data
+  getData(); 
    
 }
 

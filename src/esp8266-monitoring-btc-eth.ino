@@ -15,7 +15,6 @@
  License along with this library; if not, write to the Free Software
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-
 #include <ArduinoJson.h>
 #include <LiquidCrystal_I2C.h> 
 #include <Wire.h>  
@@ -31,6 +30,7 @@
   X509List cert(TELEGRAM_CERTIFICATE_ROOT);
 #endif
 
+ESP8266WiFiMulti WiFiMulti;
 WiFiClientSecure client_bot;
 UniversalTelegramBot bot(BOT_TOKEN, client_bot);
 
@@ -38,12 +38,23 @@ UniversalTelegramBot bot(BOT_TOKEN, client_bot);
 const char fingerprint[] = SHA1_CERTIFICATE; 
 double btc_price; 
 double eth_price;
+double index_fg;
+String index_fg_str;
+double index_fg_last; 
 double btc_price_last; 
 double eth_price_last;
+String chat_start;
+String chat_all;
+String chat_price;
+String chat_index;
 
+//Delay parameter for loop
+unsigned long current_millis = 0;
+const unsigned long event_millis = 30000;
+unsigned long previous_millis = 0;
+
+//LCD settings byte
 LiquidCrystal_I2C lcd(0x27, 16, 2);
-ESP8266WiFiMulti WiFiMulti;
-
 byte zero[]  = {B00000,B00000,B00000,B00000,B00000,B00000,B00000,B00000};
 byte one[]   = {B10000,B10000,B10000,B10000,B10000,B10000,B10000,B10000};
 byte two[]   = {B11000,B11000,B11000,B11000,B11000,B11000,B11000,B11000};
@@ -54,6 +65,7 @@ byte five[]  = {B11111,B11111,B11111,B11111,B11111,B11111,B11111,B11111};
 void setup() {
   
   Serial.begin(115200);
+
   //Add certificate
   //get UTC time
   #ifdef ESP8266
@@ -63,6 +75,7 @@ void setup() {
   #ifdef ESP32
     client_bot.setCACert(TELEGRAM_CERTIFICATE_ROOT); 
   #endif
+
   lcd.begin();
   lcd.backlight();
   lcd.clear(); 
@@ -78,25 +91,73 @@ void setup() {
   lcd.setCursor(4, 1);      
   lcd.print("FRIEND!");
   delay(2000);
+
   //Set WiFi to station mode
   WiFi.mode(WIFI_STA);
   WiFiMulti.addAP(WIFI_SSID,WIFI_PASSWD); 
-  lcd.clear(); 
+
   //This line calls the displays the progress bar.
+  lcd.clear();
   updateProgressBarLoop(); 
   lcd.setCursor(0, 0);      
+
   //Check connection WiFi
   connectionWifi(); 
   delay(500);
   lcd.clear();
+
   //Get api data and send menssage in Telegram 
-  getData(); 
-  bot.sendMessage(CHAT_ID, "Bot Online\n\nHello Friend!\n\nPrices\nBitcoin: $"+String(btc_price)+"\nEthereum: $"+String(eth_price), "");
+  displayParameter(); 
+
+  chat_start  = "Bot Online\n\nHello Friend!\n\n";
+  chat_start += "/start - return all commands\n";
+  chat_start += "/all - return all informations\n";
+  chat_start += "/p - return prices\n";
+  chat_start += "/i - return index fear and greed\n";
+  bot.sendMessage(CHAT_ID, chat_start, "");
       
 }
 
 void loop() {
- 
+  
+  current_millis = millis();
+
+  //Loop executes each input received by the chat
+  int count_messages = bot.getUpdates(bot.last_message_received + 1);
+  while(count_messages) {
+    telegramCommands(count_messages);
+    count_messages = bot.getUpdates(bot.last_message_received + 1);
+  }
+
+  //This is the event 
+  if (current_millis - previous_millis >= event_millis) {
+    displayParameter();
+    previous_millis = current_millis;
+  }  
+}
+
+//If you get here you have connected to the WiFi
+void connectionWifi(){
+
+  //Wait for WiFi connection
+  if ((WiFiMulti.run() == WL_CONNECTED)) { 
+    lcd.setCursor(0, 0);      
+    lcd.print("CONNECTED");
+    delay(1000);
+  } 
+  else {
+    lcd.setCursor(0, 0);      
+    lcd.print("NOT CONNECTED");
+    delay(1000);
+  }
+
+}
+
+//Display settings
+void displayParameter(){
+
+  //Get api data
+  getData();   
   lcd.setCursor(0, 0);
   lcd.print("BTC: ");
   lcd.setCursor(5, 0);
@@ -105,26 +166,58 @@ void loop() {
   lcd.print("ETH: ");
   lcd.setCursor(5, 1);
   lcd.print("$"+String(eth_price));
-  delay(15000);
-  //Get api data
-  getData(); 
-   
+
 }
 
-void connectionWifi(){
+//Conditional when the bot receives new messages
+void telegramCommands(int count_messages) {
 
-//If you get here you have connected to the WiFi
-  if ((WiFiMulti.run() == WL_CONNECTED)) { //Wait for WiFi connection
-      lcd.setCursor(0, 0);      
-      lcd.print("CONNECTED");
-      delay(1000);
+  for (int i=0; i<count_messages; i++) {
+
+    // Chat id of the requester
+    String chat_id = String(bot.messages[i].chat_id);
+    
+    if (chat_id != CHAT_ID){
+      bot.sendMessage(chat_id, "Unauthorized access", "");
+      continue;
+
     }
-    else {
-      lcd.setCursor(0, 0);      
-      lcd.print("NOT CONNECTED");
-      delay(1000);
+    
+    String user_text = bot.messages[i].text;
+
+    if (user_text == "/start") {
+      chat_start = "You can control me by sending these commands:\n\n";
+      chat_start += "/all - return all informations\n";
+      chat_start += "/p - return prices\n";
+      chat_start += "/i - return index Fear And Greed\n";
+      bot.sendMessage(chat_id, chat_start, "");
+
     }
 
+    if (user_text == "/all") {
+      chat_all = "Prices\n\n";
+      chat_all += "Bitcoin: $"+String(btc_price)+"\n";  
+      chat_all += "Ethereum: $"+String(eth_price)+"\n";
+      chat_all += "Index: "+String(index_fg)+"\n";
+      bot.sendMessage(chat_id, chat_all, "");
+
+    }
+
+    if (user_text == "/p") {
+      chat_price = "Prices\n\n";
+      chat_price += "Bitcoin: $"+String(btc_price)+"\n";  
+      chat_price += "Ethereum: $"+String(eth_price)+"\n";
+      bot.sendMessage(chat_id, chat_price, "");
+
+    }
+
+    if (user_text == "/i") {
+      chat_index = "Fear And Greed Index\n\n";
+      chat_index += "Index: "+String(index_fg)+"\n";  
+      bot.sendMessage(chat_id, chat_index, "");
+
+    }
+  }
 }
 
 void getData() {
@@ -146,10 +239,10 @@ void getData() {
 
     //Check the status of the api, if it is activated, the json get is done
     if (httpCode > 199 && httpCode < 300) {//Check if API is enabled
-        DynamicJsonDocument doc(1024);
-        deserializeJson(doc, https.getString());
-        JsonObject object = doc.as<JsonObject>();
-        btc_price = object["price"]; //Get the value that is in json
+      DynamicJsonDocument doc(1024);
+      deserializeJson(doc, https.getString());
+      JsonObject object = doc.as<JsonObject>();
+      btc_price = object["price"]; //Get the value that is in json
     }
     else {
       btc_price = 0.00; 
@@ -161,10 +254,10 @@ void getData() {
 
     //Check the status of the api, if it is activated, the json get is done
     if (httpCode > 199 && httpCode < 300) {//Check if API is enabled
-        DynamicJsonDocument doc(1024);
-        deserializeJson(doc, https.getString());
-        JsonObject object = doc.as<JsonObject>();
-        eth_price = object["price"]; //Get the value that is in json
+      DynamicJsonDocument doc(1024);
+      deserializeJson(doc, https.getString());
+      JsonObject object = doc.as<JsonObject>();
+      eth_price = object["price"]; //Get the value that is in json
     }
     else {
       eth_price = 0.00; 
@@ -199,18 +292,18 @@ void updateProgressBarLoop() {
   
 }
 
-void updateProgressBar(unsigned long count, unsigned long totalCount, int lineToPrintOn) {
+void updateProgressBar(unsigned long count, unsigned long total_count, int line_to_print_on) {
   
-  double factor = totalCount/80.0; //See note above!
+  double factor = total_count/80.0; //See note above!
   int percent = (count+1)/factor;
   int number = percent/5;
   int remainder = percent%5;
 
   if(number > 0) {
-     lcd.setCursor(number-1,lineToPrintOn);
-     lcd.write(5);
+    lcd.setCursor(number-1,line_to_print_on);
+    lcd.write(5);
   }
-     lcd.setCursor(number,lineToPrintOn);
-     lcd.write(remainder); 
+    lcd.setCursor(number,line_to_print_on);
+    lcd.write(remainder); 
        
 }

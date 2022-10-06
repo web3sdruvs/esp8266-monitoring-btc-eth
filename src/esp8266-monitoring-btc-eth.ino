@@ -35,10 +35,11 @@ WiFiClientSecure client_bot;
 UniversalTelegramBot bot(BOT_TOKEN, client_bot);
 
 //SHA1 fingerprint of the certificate.
-const char fingerprint[] = SHA1_CERTIFICATE; 
+const char fingerprint_price[] = SHA1_CERTIFICATE_PRICE; 
+const char fingerprint_index[] = SHA1_CERTIFICATE_INDEX; 
 double btc_price; 
 double eth_price;
-double index_fg;
+int index_fg;
 String index_fg_str;
 double index_fg_last; 
 double btc_price_last; 
@@ -48,10 +49,11 @@ String chat_all;
 String chat_price;
 String chat_index;
 
-//Delay parameter for loop
+//Delay parameter for event
 unsigned long current_millis = 0;
 const unsigned long event_millis = 30000;
 unsigned long previous_millis = 0;
+unsigned long previous_millis2 = 0;
 
 //LCD settings byte
 LiquidCrystal_I2C lcd(0x27, 16, 2);
@@ -108,6 +110,7 @@ void setup() {
 
   //Get api data and send menssage in Telegram 
   displayParameter(); 
+  getDataIndex();
 
   chat_start  = "Bot Online\n\nHello Friend!\n\n";
   chat_start += "/start - return all commands\n";
@@ -124,6 +127,7 @@ void loop() {
 
   //Loop executes each input received by the chat
   int count_messages = bot.getUpdates(bot.last_message_received + 1);
+  
   while(count_messages) {
     telegramCommands(count_messages);
     count_messages = bot.getUpdates(bot.last_message_received + 1);
@@ -134,6 +138,13 @@ void loop() {
     displayParameter();
     previous_millis = current_millis;
   }  
+
+  //This is the event 2
+  if (current_millis - previous_millis2 >= (event_millis*6000)) {
+    getDataIndex();
+    previous_millis2 = current_millis;
+  }
+
 }
 
 //If you get here you have connected to the WiFi
@@ -157,7 +168,7 @@ void connectionWifi(){
 void displayParameter(){
 
   //Get api data
-  getData();   
+  getDataPrice();   
   lcd.setCursor(0, 0);
   lcd.print("BTC: ");
   lcd.setCursor(5, 0);
@@ -199,6 +210,7 @@ void telegramCommands(int count_messages) {
       chat_all += "Bitcoin: $"+String(btc_price)+"\n";  
       chat_all += "Ethereum: $"+String(eth_price)+"\n";
       chat_all += "Index: "+String(index_fg)+"\n";
+      chat_all += "Classification: "+String(index_fg_str)+"\n";
       bot.sendMessage(chat_id, chat_all, "");
 
     }
@@ -214,18 +226,19 @@ void telegramCommands(int count_messages) {
     if (user_text == "/i") {
       chat_index = "Fear And Greed Index\n\n";
       chat_index += "Index: "+String(index_fg)+"\n";  
+      chat_index += "Classification: "+String(index_fg_str)+"\n"; 
       bot.sendMessage(chat_id, chat_index, "");
 
     }
   }
 }
 
-void getData() {
+void getDataPrice() {
  
   //Use WiFiClientSecure class to create TLS connection
   //Use SSL certificate
   std::unique_ptr<BearSSL::WiFiClientSecure>client(new BearSSL::WiFiClientSecure);
-  client->setFingerprint(fingerprint);
+  client->setFingerprint(fingerprint_price);
 
   if ((WiFi.status() == WL_CONNECTED)) { 
 
@@ -263,8 +276,6 @@ void getData() {
       eth_price = 0.00; 
     }
 
-    https.end(); 
-
     //Fixed a small bug in the API that happens for a few seconds
     if (btc_price < 10) {
       btc_price = btc_price_last;
@@ -275,6 +286,62 @@ void getData() {
     btc_price_last = btc_price;    
     eth_price_last = eth_price;
 
+    https.end(); 
+    
+
+  }
+}
+
+void getDataIndex() {
+ 
+  //Use WiFiClientSecure class to create TLS connection
+  //Use SSL certificate
+  std::unique_ptr<BearSSL::WiFiClientSecure>client(new BearSSL::WiFiClientSecure);
+  client->setFingerprint(fingerprint_index);
+
+  if ((WiFi.status() == WL_CONNECTED)) { 
+
+    HTTPClient https;
+    StaticJsonDocument<200> doc;
+    int httpCode;
+   
+    //Fear and Greed
+    https.begin(*client, "https://api.alternative.me/fng/?");
+    httpCode = https.GET(); 
+    
+    //Check the status of the api, if it is activated, the json get is done
+    if (httpCode > 199 && httpCode < 300) {//Check if API is enabled
+      DynamicJsonDocument doc(1024);
+      deserializeJson(doc, https.getString());
+      JsonObject object = doc.as<JsonObject>();
+      index_fg = object["data"][0]["value"]; //Get the value that is in json
+    }
+    else {
+      index_fg = 0; 
+    }
+
+    https.end(); 
+
+    //Zones index feal and greed
+    if (index_fg > 0 && index_fg <= 24) {
+      index_fg_str = "Extreme Fear";
+    } 
+    else if (index_fg > 24 && index_fg <= 44) {
+      index_fg_str = "Fear";
+    }
+    else if (index_fg > 44 && index_fg <= 55) {
+      index_fg_str = "Neutral";
+    }
+    else if (index_fg > 55 && index_fg <= 74) {
+      index_fg_str = "Greed";
+    }
+    else if (index_fg > 74 && index_fg <= 100) {
+      index_fg_str = "Extreme Greed";
+    }
+    else {
+      index_fg_str = "No data";
+      
+    }
   }
 }
 

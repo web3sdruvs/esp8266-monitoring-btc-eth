@@ -53,6 +53,11 @@ Wallet address:
 web3sdruvs.crypto
 ```
 
+Bitcoin lightning network: 
+```bash
+bc1qjgz6y7sh2rw5fl55432rr6n6vs9hrhhhsn2eft
+```
+
 # License and Credits
 You may copy, distribute and modify the software provided that modifications are described and licensed for free under GNU . Derivatives works (including modifications or anything statically linked to the library) can only be redistributed under GNU  but applications that use the library don't have to be.
 

@@ -41,9 +41,11 @@ double btc_price;
 double eth_price;
 int index_fg;
 String index_fg_str;
-double index_fg_last; 
+int index_fg_last; 
 double btc_price_last; 
 double eth_price_last;
+int btc_variation_percentage;
+int eth_variation_percentage;
 String chat_start;
 String chat_all;
 String chat_price;
@@ -108,11 +110,17 @@ void setup() {
   delay(500);
   lcd.clear();
 
-  //Get api data and send menssage in Telegram 
+  //Get api data  
   displayParameter(); 
   getDataIndex();
 
-  chat_start  = "Bot Online\n\nHello Friend!\n\n";
+  //Save last values
+  index_fg_last = index_fg;
+  btc_price_last = btc_price; 
+  eth_price_last = eth_price;
+
+  //Send start menssage in Telegram 
+  chat_start  = "🟢 Bot Online\n\nHello Friend!\n\n";
   chat_start += "/start - return all commands\n";
   chat_start += "/all - return all informations\n";
   chat_start += "/p - return prices\n";
@@ -137,14 +145,44 @@ void loop() {
   if (current_millis - previous_millis >= event_millis) {
     displayParameter();
     previous_millis = current_millis;
+    
   }  
 
   //This is the event 2
-  if (current_millis - previous_millis2 >= (event_millis*6000)) {
+  if (current_millis - previous_millis2 >= (event_millis*30)) {
     getDataIndex();
-    previous_millis2 = current_millis;
-  }
 
+    //Percentage variation calculation    
+    btc_variation_percentage = round((btc_price/btc_price_last-1)*100);
+    eth_variation_percentage = round((eth_price/eth_price_last-1)*100);
+
+    if (index_fg != index_fg_last) {
+      chat_index = "🚨 Alert for change in market sentiment\n\n";
+      chat_index += "Index Previous: "+String(index_fg_last)+"\n"; 
+      chat_index += "Index Now: "+String(index_fg)+"\n"; 
+      chat_index += "Classification: "+String(index_fg_str)+"\n"; 
+      bot.sendMessage(CHAT_ID, chat_index, "");
+    }
+
+    if (btc_variation_percentage >= 5 || btc_variation_percentage <= -5) {
+      chat_price = "🚨 Bitcoin price change alert\n\n";
+      chat_price += "Bitcoin: $"+String(btc_price)+" | "+btc_variation_percentage+"%\n"; 
+      bot.sendMessage(CHAT_ID, chat_price, "");
+    }
+
+    if (eth_variation_percentage >= 5 || eth_variation_percentage <= -5) {
+      chat_price = "🚨 Ethereum price change alert\n\n";
+      chat_price += "Ethereum: $"+String(eth_price)+" | "+eth_variation_percentage+"%\n"; 
+      bot.sendMessage(CHAT_ID, chat_price, "");
+    }
+
+    //Save last values
+    previous_millis2 = current_millis;
+    index_fg_last = index_fg;
+    btc_price_last = btc_price; 
+    eth_price_last = eth_price;
+
+  }
 }
 
 //If you get here you have connected to the WiFi
@@ -191,7 +229,6 @@ void telegramCommands(int count_messages) {
     if (chat_id != CHAT_ID){
       bot.sendMessage(chat_id, "Unauthorized access", "");
       continue;
-
     }
     
     String user_text = bot.messages[i].text;
@@ -202,17 +239,16 @@ void telegramCommands(int count_messages) {
       chat_start += "/p - return prices\n";
       chat_start += "/i - return index Fear And Greed\n";
       bot.sendMessage(chat_id, chat_start, "");
-
     }
 
     if (user_text == "/all") {
       chat_all = "Prices\n\n";
       chat_all += "Bitcoin: $"+String(btc_price)+"\n";  
-      chat_all += "Ethereum: $"+String(eth_price)+"\n";
+      chat_all += "Ethereum: $"+String(eth_price)+"\n\n";
+      chat_index = "Fear And Greed Index\n\n";
       chat_all += "Index: "+String(index_fg)+"\n";
       chat_all += "Classification: "+String(index_fg_str)+"\n";
       bot.sendMessage(chat_id, chat_all, "");
-
     }
 
     if (user_text == "/p") {
@@ -220,7 +256,6 @@ void telegramCommands(int count_messages) {
       chat_price += "Bitcoin: $"+String(btc_price)+"\n";  
       chat_price += "Ethereum: $"+String(eth_price)+"\n";
       bot.sendMessage(chat_id, chat_price, "");
-
     }
 
     if (user_text == "/i") {
@@ -288,7 +323,6 @@ void getDataPrice() {
 
     https.end(); 
     
-
   }
 }
 
@@ -354,6 +388,7 @@ void updateProgressBarLoop() {
     updateProgressBar(i, 100, 1); //This line calls the subroutine that displays the progress bar.  
     delay(50);
   }
+
   delay(1000);
   lcd.clear();
   

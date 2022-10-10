@@ -125,6 +125,8 @@ void setup() {
   chat_start += "/all - return all informations\n";
   chat_start += "/p - return prices\n";
   chat_start += "/i - return index fear and greed\n";
+  chat_start += "/t - change monitoring time\n";  
+  chat_start += "/v - change variation scale\n"; 
   bot.sendMessage(CHAT_ID, chat_start, "");
       
 }
@@ -181,7 +183,6 @@ void loop() {
     index_fg_last = index_fg;
     btc_price_last = btc_price; 
     eth_price_last = eth_price;
-
   }
 }
 
@@ -199,7 +200,6 @@ void connectionWifi(){
     lcd.print("NOT CONNECTED");
     delay(1000);
   }
-
 }
 
 //Display settings
@@ -215,7 +215,6 @@ void displayParameter(){
   lcd.print("ETH: ");
   lcd.setCursor(5, 1);
   lcd.print("$"+String(eth_price));
-
 }
 
 //Conditional when the bot receives new messages
@@ -238,6 +237,8 @@ void telegramCommands(int count_messages) {
       chat_start += "/all - return all informations\n";
       chat_start += "/p - return prices\n";
       chat_start += "/i - return index Fear And Greed\n";
+      chat_start += "/t - change monitoring time\n";   
+      chat_start += "/v - change variation scale\n";  
       bot.sendMessage(chat_id, chat_start, "");
     }
 
@@ -245,7 +246,7 @@ void telegramCommands(int count_messages) {
       chat_all = "Prices\n\n";
       chat_all += "Bitcoin: $"+String(btc_price)+"\n";  
       chat_all += "Ethereum: $"+String(eth_price)+"\n\n";
-      chat_index = "Fear And Greed Index\n\n";
+      chat_all += "Fear And Greed Index\n\n";
       chat_all += "Index: "+String(index_fg)+"\n";
       chat_all += "Classification: "+String(index_fg_str)+"\n";
       bot.sendMessage(chat_id, chat_all, "");
@@ -263,7 +264,6 @@ void telegramCommands(int count_messages) {
       chat_index += "Index: "+String(index_fg)+"\n";  
       chat_index += "Classification: "+String(index_fg_str)+"\n"; 
       bot.sendMessage(chat_id, chat_index, "");
-
     }
   }
 }
@@ -322,7 +322,6 @@ void getDataPrice() {
     eth_price_last = eth_price;
 
     https.end(); 
-    
   }
 }
 
@@ -374,7 +373,6 @@ void getDataIndex() {
     }
     else {
       index_fg_str = "No data";
-      
     }
   }
 }
@@ -390,8 +388,7 @@ void updateProgressBarLoop() {
   }
 
   delay(1000);
-  lcd.clear();
-  
+  lcd.clear(); 
 }
 
 void updateProgressBar(unsigned long count, unsigned long total_count, int line_to_print_on) {
@@ -406,6 +403,5 @@ void updateProgressBar(unsigned long count, unsigned long total_count, int line_
     lcd.write(5);
   }
     lcd.setCursor(number,line_to_print_on);
-    lcd.write(remainder); 
-       
+    lcd.write(remainder);      
 }

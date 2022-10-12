@@ -46,10 +46,17 @@ double btc_price_last;
 double eth_price_last;
 int btc_variation_percentage;
 int eth_variation_percentage;
+
+//Interval for duration analysis
+int inverval_time = 30;
+
+//Text to message for Telegram
 String chat_start;
 String chat_all;
 String chat_price;
 String chat_index;
+String chat_time;
+String chat_variation;
 
 //Delay parameter for event
 unsigned long current_millis = 0;
@@ -120,7 +127,7 @@ void setup() {
   eth_price_last = eth_price;
 
   //Send start menssage in Telegram 
-  chat_start  = "🟢 Bot Online\n\nHello Friend!\n\n";
+  chat_start  = "🟢Bot Online\n\nHello Friend!\n\n";
   chat_start += "/start - return all commands\n";
   chat_start += "/all - return all informations\n";
   chat_start += "/p - return prices\n";
@@ -143,47 +150,7 @@ void loop() {
     count_messages = bot.getUpdates(bot.last_message_received + 1);
   }
 
-  //This is the event 
-  if (current_millis - previous_millis >= event_millis) {
-    displayParameter();
-    previous_millis = current_millis;
-    
-  }  
-
-  //This is the event 2
-  if (current_millis - previous_millis2 >= (event_millis*30)) {
-    getDataIndex();
-
-    //Percentage variation calculation    
-    btc_variation_percentage = round((btc_price/btc_price_last-1)*100);
-    eth_variation_percentage = round((eth_price/eth_price_last-1)*100);
-
-    if (index_fg != index_fg_last) {
-      chat_index = "🚨 Alert for change in market sentiment\n\n";
-      chat_index += "Index Previous: "+String(index_fg_last)+"\n"; 
-      chat_index += "Index Now: "+String(index_fg)+"\n"; 
-      chat_index += "Classification: "+String(index_fg_str)+"\n"; 
-      bot.sendMessage(CHAT_ID, chat_index, "");
-    }
-
-    if (btc_variation_percentage >= 5 || btc_variation_percentage <= -5) {
-      chat_price = "🚨 Bitcoin price change alert\n\n";
-      chat_price += "Bitcoin: $"+String(btc_price)+" | "+btc_variation_percentage+"%\n"; 
-      bot.sendMessage(CHAT_ID, chat_price, "");
-    }
-
-    if (eth_variation_percentage >= 5 || eth_variation_percentage <= -5) {
-      chat_price = "🚨 Ethereum price change alert\n\n";
-      chat_price += "Ethereum: $"+String(eth_price)+" | "+eth_variation_percentage+"%\n"; 
-      bot.sendMessage(CHAT_ID, chat_price, "");
-    }
-
-    //Save last values
-    previous_millis2 = current_millis;
-    index_fg_last = index_fg;
-    btc_price_last = btc_price; 
-    eth_price_last = eth_price;
-  }
+  eventTrigger();
 }
 
 //If you get here you have connected to the WiFi
@@ -226,7 +193,7 @@ void telegramCommands(int count_messages) {
     String chat_id = String(bot.messages[i].chat_id);
     
     if (chat_id != CHAT_ID){
-      bot.sendMessage(chat_id, "Unauthorized access", "");
+      bot.sendMessage(chat_id, "❌Unauthorized access", "");
       continue;
     }
     
@@ -243,28 +210,106 @@ void telegramCommands(int count_messages) {
     }
 
     if (user_text == "/all") {
-      chat_all = "Prices\n\n";
+      chat_all = "💰Prices\n";
       chat_all += "Bitcoin: $"+String(btc_price)+"\n";  
       chat_all += "Ethereum: $"+String(eth_price)+"\n\n";
-      chat_all += "Fear And Greed Index\n\n";
-      chat_all += "Index: "+String(index_fg)+"\n";
+      chat_all += "📊Fear And Greed Index\n";
       chat_all += "Classification: "+String(index_fg_str)+"\n";
+      chat_all += "Index: "+String(index_fg)+"/100\n";
       bot.sendMessage(chat_id, chat_all, "");
     }
 
     if (user_text == "/p") {
-      chat_price = "Prices\n\n";
+      chat_price = "💰Prices\n";
       chat_price += "Bitcoin: $"+String(btc_price)+"\n";  
       chat_price += "Ethereum: $"+String(eth_price)+"\n";
       bot.sendMessage(chat_id, chat_price, "");
     }
 
     if (user_text == "/i") {
-      chat_index = "Fear And Greed Index\n\n";
-      chat_index += "Index: "+String(index_fg)+"\n";  
-      chat_index += "Classification: "+String(index_fg_str)+"\n"; 
+      chat_index = "📊Fear And Greed Index\n";
+      chat_index += "Classification: "+String(index_fg_str)+"\n";
+      chat_index += "Index: "+String(index_fg)+"/100\n";   
       bot.sendMessage(chat_id, chat_index, "");
     }
+
+    if (user_text == "/t") {
+      chat_time = "⏱️Set the analysis range\n\n";
+      chat_time += "/5min - set the interval to 5 minutes\n";
+      chat_time += "/15min - set the interval to 10 minutes\n";
+      chat_time += "/30min - set the interval to 30 minutes\n";
+      chat_time += "/1h - set the interval to 1 hour\n";     
+      bot.sendMessage(chat_id, chat_time, "");
+    }
+
+    if (user_text == "/5min") {
+      chat_time = "Analysis interval set to 5 minutes\n";  
+      inverval_time = 10;
+      bot.sendMessage(chat_id, chat_time, "");
+    }
+
+    if (user_text == "/15min") {
+      chat_time = "Analysis interval set to 15 minutes\n";  
+      inverval_time = 30;
+      bot.sendMessage(chat_id, chat_time, "");
+    }
+
+    if (user_text == "/30min") {
+      chat_time = "Analysis interval set to 30 minutes\n";  
+      inverval_time = 60;
+      bot.sendMessage(chat_id, chat_time, "");
+    }
+    
+    if (user_text == "/1h") {
+      chat_time = "Analysis interval set to 1 hour\n";  
+      inverval_time = 120;
+      bot.sendMessage(chat_id, chat_time, "");
+    }
+  }
+}
+
+//Event trigger for price change and market sentiment change
+void eventTrigger(){
+
+  //This is the event 
+  if (current_millis - previous_millis >= event_millis) {
+    displayParameter();
+    previous_millis = current_millis; 
+  }  
+
+  //This is the event 2
+  if (current_millis - previous_millis2 >= (event_millis*inverval_time)) {
+    getDataIndex();
+
+    //Percentage variation calculation    
+    btc_variation_percentage = round((btc_price/btc_price_last-1)*100);
+    eth_variation_percentage = round((eth_price/eth_price_last-1)*100);
+
+    if (index_fg != index_fg_last) {
+      chat_index = "🚨Alert for change in market sentiment\n\n";
+      chat_index += "Classification: "+String(index_fg_str)+"\n"; 
+      chat_index += "Index Now: "+String(index_fg)+"/100\n"; 
+      chat_index += "Index Previous: "+String(index_fg_last)+"/100\n";
+      bot.sendMessage(CHAT_ID, chat_index, "");
+    }
+
+    if (btc_variation_percentage >= 5 || btc_variation_percentage <= -5) {
+      chat_price = "🚨Bitcoin price change alert\n\n";
+      chat_price += "Bitcoin: $"+String(btc_price)+" | "+btc_variation_percentage+"%\n"; 
+      bot.sendMessage(CHAT_ID, chat_price, "");
+    }
+
+    if (eth_variation_percentage >= 5 || eth_variation_percentage <= -5) {
+      chat_price = "🚨Ethereum price change alert\n\n";
+      chat_price += "Ethereum: $"+String(eth_price)+" | "+eth_variation_percentage+"%\n"; 
+      bot.sendMessage(CHAT_ID, chat_price, "");
+    }
+
+    //Save last values
+    previous_millis2 = current_millis;
+    index_fg_last = index_fg;
+    btc_price_last = btc_price; 
+    eth_price_last = eth_price;
   }
 }
 

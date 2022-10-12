@@ -46,9 +46,8 @@ double btc_price_last;
 double eth_price_last;
 int btc_variation_percentage;
 int eth_variation_percentage;
-
-//Interval for duration analysis
 int inverval_time = 30;
+int percentage_variantion = 5;
 
 //Text to message for Telegram
 String chat_start;
@@ -265,6 +264,39 @@ void telegramCommands(int count_messages) {
       inverval_time = 120;
       bot.sendMessage(chat_id, chat_time, "");
     }
+
+    if (user_text == "/v") {
+      chat_time = "📈Set the price change percentage\n\n";
+      chat_time += "/1 - set the percentage to 1%\n";
+      chat_time += "/5 - set the percentage to 5%\n";
+      chat_time += "/10 - set the interval to 10%\n";
+      chat_time += "/50 - set the interval to 50%\n";     
+      bot.sendMessage(chat_id, chat_time, "");
+    }
+
+    if (user_text == "/1") {
+      chat_time = "✅Percentage set to 1%\n";  
+      percentage_variantion = 1;
+      bot.sendMessage(chat_id, chat_time, "");
+    }
+
+    if (user_text == "/5") {
+      chat_time = "✅Percentage set to 5%\n";  
+      percentage_variantion = 5;
+      bot.sendMessage(chat_id, chat_time, "");
+    }
+
+    if (user_text == "/10") {
+      chat_time = "✅Percentage set to 10%\n";  
+      percentage_variantion = 10;
+      bot.sendMessage(chat_id, chat_time, "");
+    }
+
+    if (user_text == "/50") {
+      chat_time = "✅Percentage set to 50%\n";  
+      percentage_variantion = 50;
+      bot.sendMessage(chat_id, chat_time, "");
+    }
   }
 }
 
@@ -293,13 +325,13 @@ void eventTrigger(){
       bot.sendMessage(CHAT_ID, chat_index, "");
     }
 
-    if (btc_variation_percentage >= 5 || btc_variation_percentage <= -5) {
+    if (btc_variation_percentage >= percentage_variantion || btc_variation_percentage <= (percentage_variantion*-1)) {
       chat_price = "🚨Bitcoin price change alert\n\n";
       chat_price += "Bitcoin: $"+String(btc_price)+" | "+btc_variation_percentage+"%\n"; 
       bot.sendMessage(CHAT_ID, chat_price, "");
     }
 
-    if (eth_variation_percentage >= 5 || eth_variation_percentage <= -5) {
+    if (eth_variation_percentage >= percentage_variantion || eth_variation_percentage <= (percentage_variantion*-1)) {
       chat_price = "🚨Ethereum price change alert\n\n";
       chat_price += "Ethereum: $"+String(eth_price)+" | "+eth_variation_percentage+"%\n"; 
       bot.sendMessage(CHAT_ID, chat_price, "");

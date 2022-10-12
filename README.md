@@ -34,7 +34,7 @@ View the last released ESP8266 documentation at: [https://arduino-esp8266.readth
 Here are the forecast updates listed:
 
 - Apollo - Monitoring: Track Bitcoin and Ethereum price with LCD. (Done) ✅ 
-- Ares - PriceAlerts: Receive price alerts set via Telegram Bot. (Under development) ⌚
+- Ares - PriceAlerts: Receive price alerts set via Telegram Bot. (Done) ✅
 - Artemis - Monitoring Whale Portfolio. (Under development) ⌚
 
 # Donations

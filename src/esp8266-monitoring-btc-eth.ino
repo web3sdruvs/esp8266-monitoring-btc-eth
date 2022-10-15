@@ -44,8 +44,8 @@ String index_fg_str;
 int index_fg_last; 
 double btc_price_last; 
 double eth_price_last;
-int btc_variation_percentage;
-int eth_variation_percentage;
+int btc_percentage_variation;
+int eth_percentage_variation;
 int inverval_time = 30;
 int percentage_variantion = 5;
 
@@ -235,7 +235,7 @@ void telegramCommands(int count_messages) {
     if (user_text == "/t") {
       chat_time = "⏱️Set the analysis range\n\n";
       chat_time += "/5min - set the interval to 5 minutes\n";
-      chat_time += "/15min - set the interval to 10 minutes\n";
+      chat_time += "/15min - set the interval to 15 minutes\n";
       chat_time += "/30min - set the interval to 30 minutes\n";
       chat_time += "/1h - set the interval to 1 hour\n";     
       bot.sendMessage(chat_id, chat_time, "");
@@ -314,8 +314,8 @@ void eventTrigger(){
     getDataIndex();
 
     //Percentage variation calculation    
-    btc_variation_percentage = round((btc_price/btc_price_last-1)*100);
-    eth_variation_percentage = round((eth_price/eth_price_last-1)*100);
+    btc_percentage_variation = round((btc_price/btc_price_last-1)*100);
+    eth_percentage_variation = round((eth_price/eth_price_last-1)*100);
 
     if (index_fg != index_fg_last) {
       chat_index = "🚨Alert for change in market sentiment\n\n";
@@ -325,15 +325,15 @@ void eventTrigger(){
       bot.sendMessage(CHAT_ID, chat_index, "");
     }
 
-    if (btc_variation_percentage >= percentage_variantion || btc_variation_percentage <= (percentage_variantion*-1)) {
+    if (btc_percentage_variation >= percentage_variantion || btc_percentage_variation <= (percentage_variantion*-1)) {
       chat_price = "🚨Bitcoin price change alert\n\n";
-      chat_price += "Bitcoin: $"+String(btc_price)+" | "+btc_variation_percentage+"%\n"; 
+      chat_price += "Bitcoin: $"+String(btc_price)+" | "+btc_percentage_variation+"%\n"; 
       bot.sendMessage(CHAT_ID, chat_price, "");
     }
 
-    if (eth_variation_percentage >= percentage_variantion || eth_variation_percentage <= (percentage_variantion*-1)) {
+    if (eth_percentage_variation >= percentage_variantion || eth_percentage_variation <= (percentage_variantion*-1)) {
       chat_price = "🚨Ethereum price change alert\n\n";
-      chat_price += "Ethereum: $"+String(eth_price)+" | "+eth_variation_percentage+"%\n"; 
+      chat_price += "Ethereum: $"+String(eth_price)+" | "+eth_percentage_variation+"%\n"; 
       bot.sendMessage(CHAT_ID, chat_price, "");
     }
 
@@ -427,7 +427,7 @@ void getDataIndex() {
       index_fg = object["data"][0]["value"]; //Get the value that is in json
     }
     else {
-      index_fg = 0; 
+      index_fg = index_fg_last; 
     }
 
     https.end(); 

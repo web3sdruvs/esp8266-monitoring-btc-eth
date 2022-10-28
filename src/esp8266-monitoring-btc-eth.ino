@@ -22,6 +22,7 @@
 #include <WiFiClient.h>
 #include <ESP8266HTTPClient.h>
 #include <ESP8266WiFiMulti.h>
+#include <EEPROM.h>
 #include <WiFiClientSecureBearSSL.h>
 #include <UniversalTelegramBot.h>
 #include "credentials.h"
@@ -48,6 +49,10 @@ int btc_percentage_variation;
 int eth_percentage_variation;
 int inverval_time = 30;
 int percentage_variantion = 5;
+int inverval_time_eeprom;
+int percentage_variantion_eeprom;
+String inverval_time_str;
+String percentage_variantion_str;
 
 //Text to message for Telegram
 String chat_start;
@@ -75,6 +80,7 @@ byte five[]  = {B11111,B11111,B11111,B11111,B11111,B11111,B11111,B11111};
 void setup() {
   
   Serial.begin(115200);
+  EEPROM.begin(512);
 
   //Add certificate
   //get UTC time
@@ -119,20 +125,25 @@ void setup() {
   //Get api data  
   displayParameter(); 
   getDataIndex();
+  setSetup();
 
   //Save last values
   index_fg_last = index_fg;
   btc_price_last = btc_price; 
   eth_price_last = eth_price;
 
-  //Send start menssage in Telegram 
+  //Send start menssage in Telegram   
   chat_start  = "🟢Bot Online\n\nHello Friend!\n\n";
+  chat_start += "Commands\n";
   chat_start += "/start - return all commands\n";
   chat_start += "/all - return all informations\n";
   chat_start += "/p - return prices\n";
-  chat_start += "/i - return index fear and greed\n";
-  chat_start += "/t - change monitoring time\n";  
-  chat_start += "/v - change variation scale\n"; 
+  chat_start += "/i - return index Fear And Greed\n";
+  chat_start += "/t - change monitoring time\n";   
+  chat_start += "/v - change variation scale\n\n";  
+  chat_start += "Setup\n";
+  chat_start += inverval_time_str;
+  chat_start += percentage_variantion_str;
   bot.sendMessage(CHAT_ID, chat_start, "");
       
 }
@@ -140,7 +151,7 @@ void setup() {
 void loop() {
   
   current_millis = millis();
-
+  
   //Loop executes each input received by the chat
   int count_messages = bot.getUpdates(bot.last_message_received + 1);
   
@@ -200,11 +211,15 @@ void telegramCommands(int count_messages) {
 
     if (user_text == "/start") {
       chat_start = "You can control me by sending these commands:\n\n";
+      chat_start += "Commands\n";
       chat_start += "/all - return all informations\n";
       chat_start += "/p - return prices\n";
       chat_start += "/i - return index Fear And Greed\n";
       chat_start += "/t - change monitoring time\n";   
-      chat_start += "/v - change variation scale\n";  
+      chat_start += "/v - change variation scale\n\n";  
+      chat_start += "Setup\n";
+      chat_start += inverval_time_str;
+      chat_start += percentage_variantion_str;
       bot.sendMessage(chat_id, chat_start, "");
     }
 
@@ -244,24 +259,36 @@ void telegramCommands(int count_messages) {
     if (user_text == "/5min") {
       chat_time = "✅Analysis interval set to 5 minutes\n";  
       inverval_time = 10;
+      EEPROM.write(0, inverval_time);
+      EEPROM.commit();
+      setSetup();
       bot.sendMessage(chat_id, chat_time, "");
     }
 
     if (user_text == "/15min") {
       chat_time = "✅Analysis interval set to 15 minutes\n";  
       inverval_time = 30;
+      EEPROM.write(0, inverval_time);
+      EEPROM.commit();
+      setSetup();
       bot.sendMessage(chat_id, chat_time, "");
     }
 
     if (user_text == "/30min") {
       chat_time = "✅Analysis interval set to 30 minutes\n";  
       inverval_time = 60;
+      EEPROM.write(0, inverval_time);
+      EEPROM.commit();
+      setSetup();
       bot.sendMessage(chat_id, chat_time, "");
     }
     
     if (user_text == "/1h") {
       chat_time = "✅Analysis interval set to 1 hour\n";  
       inverval_time = 120;
+      EEPROM.write(0, inverval_time);
+      EEPROM.commit();
+      setSetup();
       bot.sendMessage(chat_id, chat_time, "");
     }
 
@@ -277,24 +304,36 @@ void telegramCommands(int count_messages) {
     if (user_text == "/1") {
       chat_time = "✅Percentage set to 1%\n";  
       percentage_variantion = 1;
+      EEPROM.write(3, percentage_variantion);
+      EEPROM.commit();
+      setSetup();
       bot.sendMessage(chat_id, chat_time, "");
     }
 
     if (user_text == "/5") {
       chat_time = "✅Percentage set to 5%\n";  
       percentage_variantion = 5;
+      EEPROM.write(3, percentage_variantion);
+      EEPROM.commit();
+      setSetup();
       bot.sendMessage(chat_id, chat_time, "");
     }
 
     if (user_text == "/10") {
       chat_time = "✅Percentage set to 10%\n";  
       percentage_variantion = 10;
+      EEPROM.write(3, percentage_variantion);
+      EEPROM.commit();
+      setSetup();
       bot.sendMessage(chat_id, chat_time, "");
     }
 
     if (user_text == "/50") {
       chat_time = "✅Percentage set to 50%\n";  
       percentage_variantion = 50;
+      EEPROM.write(3, percentage_variantion);
+      EEPROM.commit();
+      setSetup();
       bot.sendMessage(chat_id, chat_time, "");
     }
   }
@@ -452,6 +491,55 @@ void getDataIndex() {
       index_fg_str = "No data";
     }
   }
+}
+
+void setSetup() {
+
+  //Read values in EEPROM
+  inverval_time_eeprom = EEPROM.read(0);
+  percentage_variantion_eeprom = EEPROM.read(3);
+
+  //Change variable to value save in EEPROM
+  if (inverval_time_eeprom != inverval_time && inverval_time_eeprom > 0) {
+    inverval_time = inverval_time_eeprom;
+  }
+
+  //Change variable to value save in EEPROM
+  if (percentage_variantion_eeprom != percentage_variantion && percentage_variantion_eeprom > 0) {
+    percentage_variantion = percentage_variantion_eeprom;
+  }
+
+  //Set text for interval time
+  switch (inverval_time) {
+    case 10:
+      inverval_time_str = "⏱️Analysis time set to 5 minutes\n";
+      break;
+    case 30:
+      inverval_time_str = "⏱️Analysis time set to 15 minutes\n";
+      break;
+    case 60:
+      inverval_time_str = "⏱️Analysis time set to 30 minutes\n";
+      break;
+    case 120:
+      inverval_time_str = "⏱️Analysis time set to 1 hour\n";
+      break;
+  } 
+
+  //Set text for percentage variation
+  switch (percentage_variantion) {
+    case 1:
+      percentage_variantion_str = "📈Variation percentage set to 1%\n";
+      break;
+    case 5:
+      percentage_variantion_str = "📈Variation percentage set to 5%\n";
+      break;
+    case 10:
+      percentage_variantion_str = "📈Variation percentage set to 10%\n";
+      break;
+    case 50:
+      percentage_variantion_str = "📈Variation percentage set to 50%\n";
+      break;
+  } 
 }
 
 void updateProgressBarLoop() {

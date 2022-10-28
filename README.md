@@ -53,7 +53,7 @@ Wallet address:
 web3sdruvs.crypto
 ```
 
-Bitcoin lightning network: 
+Bitcoin address: 
 ```bash
 bc1qjgz6y7sh2rw5fl55432rr6n6vs9hrhhhsn2eft
 ```

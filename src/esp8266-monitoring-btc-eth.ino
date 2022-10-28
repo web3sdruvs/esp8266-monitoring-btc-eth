@@ -259,36 +259,28 @@ void telegramCommands(int count_messages) {
     if (user_text == "/5min") {
       chat_time = "✅Analysis interval set to 5 minutes\n";  
       inverval_time = 10;
-      EEPROM.write(0, inverval_time);
-      EEPROM.commit();
-      setSetup();
+      commitEEPROM(0);
       bot.sendMessage(chat_id, chat_time, "");
     }
 
     if (user_text == "/15min") {
       chat_time = "✅Analysis interval set to 15 minutes\n";  
       inverval_time = 30;
-      EEPROM.write(0, inverval_time);
-      EEPROM.commit();
-      setSetup();
+      commitEEPROM(0);
       bot.sendMessage(chat_id, chat_time, "");
     }
 
     if (user_text == "/30min") {
       chat_time = "✅Analysis interval set to 30 minutes\n";  
       inverval_time = 60;
-      EEPROM.write(0, inverval_time);
-      EEPROM.commit();
-      setSetup();
+      commitEEPROM(0);
       bot.sendMessage(chat_id, chat_time, "");
     }
     
     if (user_text == "/1h") {
       chat_time = "✅Analysis interval set to 1 hour\n";  
       inverval_time = 120;
-      EEPROM.write(0, inverval_time);
-      EEPROM.commit();
-      setSetup();
+      commitEEPROM(0);
       bot.sendMessage(chat_id, chat_time, "");
     }
 
@@ -304,36 +296,28 @@ void telegramCommands(int count_messages) {
     if (user_text == "/1") {
       chat_time = "✅Percentage set to 1%\n";  
       percentage_variantion = 1;
-      EEPROM.write(3, percentage_variantion);
-      EEPROM.commit();
-      setSetup();
+      commitEEPROM(3);
       bot.sendMessage(chat_id, chat_time, "");
     }
 
     if (user_text == "/5") {
       chat_time = "✅Percentage set to 5%\n";  
       percentage_variantion = 5;
-      EEPROM.write(3, percentage_variantion);
-      EEPROM.commit();
-      setSetup();
+      commitEEPROM(3);
       bot.sendMessage(chat_id, chat_time, "");
     }
 
     if (user_text == "/10") {
       chat_time = "✅Percentage set to 10%\n";  
       percentage_variantion = 10;
-      EEPROM.write(3, percentage_variantion);
-      EEPROM.commit();
-      setSetup();
+      commitEEPROM(3);
       bot.sendMessage(chat_id, chat_time, "");
     }
 
     if (user_text == "/50") {
       chat_time = "✅Percentage set to 50%\n";  
       percentage_variantion = 50;
-      EEPROM.write(3, percentage_variantion);
-      EEPROM.commit();
-      setSetup();
+      commitEEPROM(3);
       bot.sendMessage(chat_id, chat_time, "");
     }
   }
@@ -540,6 +524,22 @@ void setSetup() {
       percentage_variantion_str = "📈Variation percentage set to 50%\n";
       break;
   } 
+}
+
+void commitEEPROM(int address) {
+
+  //Conditional for address from storage
+  if (address = 0) {
+    EEPROM.write(0, inverval_time);
+    EEPROM.commit();
+    setSetup();
+  }
+
+  if (address = 3) {
+    EEPROM.write(3, percentage_variantion);
+    EEPROM.commit();
+    setSetup();
+  }
 }
 
 void updateProgressBarLoop() {

@@ -35,7 +35,7 @@ Here are the forecast updates listed:
 
 - Apollo - Monitoring: Track Bitcoin and Ethereum price with LCD. (Done) ✅ 
 - Ares - PriceAlerts: Receive price alerts set via Telegram Bot. (Done) ✅
-- Artemis - Monitoring Whale Portfolio. (Under development) ⌚
+- ~~Artemis - Monitoring Whale Portfolio. (Under development)~~ (Unimplemented Update) 🟠 
 
 # Donations
 If this repository helps you in your development or if you would like to support this development, you can give me a cup of coffee. ☕

@@ -53,6 +53,11 @@ Wallet address:
 web3sdruvs.crypto
 ```
 
+ERC20 address: 
+```bash
+0xf8BDa8fcDD7fFfA17885e435506CF3Eb9A48855A
+```
+
 Bitcoin address: 
 ```bash
 bc1qjgz6y7sh2rw5fl55432rr6n6vs9hrhhhsn2eft

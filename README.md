@@ -14,7 +14,7 @@ You can install Arduino IDE esp8266-monitoring-btc-eth for your ESP8266 by downl
 - 16x2 LCD Display Module
 
 ### Architecture
-![alt text](https://raw.githubusercontent.com/web3sdruvs/esp8266-monitoring-btc-eth/main/data/architecture.webp?token=GHSAT0AAAAAABY36TU22DKAT366MTCNEEY2YZGS4HQ)
+![alt text](https://raw.githubusercontent.com/web3sdruvs/esp8266-monitoring-btc-eth/refs/heads/main/data/architecture.webp)
 
 # Sketch / include Library / Add .Zip library	
 
